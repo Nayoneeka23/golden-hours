@@ -218,7 +218,7 @@ function App() {
   );
 }
 
-function HomeScreen({ onStart }) {
+function HomeScreen({ onStart, onLogin }) {
   return (
     <section className="hero" id="home" aria-labelledby="hero-title">
       <article className="hero-copy" itemScope itemType="https://schema.org/SoftwareApplication">
@@ -234,7 +234,7 @@ function HomeScreen({ onStart }) {
           <button className="primary-action" type="button" onClick={onStart}>
             Get started
           </button>
-          <button className="secondary-action" type="button" onClick={onStart}>
+          <button className="secondary-action" type="button" onClick={onLogin}>
             Log in
           </button>
         </div>
