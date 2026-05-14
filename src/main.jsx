@@ -406,6 +406,106 @@ function MapScreen({ plannedStops, position, routeMode, setRouteMode }) {
     </section>
   );
 }
+function LoginScreen({ onSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleLogin(event) {
+    event.preventDefault();
+
+    const savedUser = JSON.parse(localStorage.getItem("goldenhours-user"));
+
+    if (
+      savedUser &&
+      savedUser.email === email &&
+      savedUser.password === password
+    ) {
+      alert("Login successful!");
+      onSuccess();
+    } else {
+      alert("Invalid credentials");
+    }
+  }
+
+  return (
+    <section className="planner-view">
+      <div className="section-heading">
+        <p className="eyebrow">Login</p>
+        <h1>Welcome Back</h1>
+      </div>
+
+      <form className="planner-form" onSubmit={handleLogin}>
+        <label>Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter email"
+        />
+
+        <label>Password</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter password"
+        />
+
+        <button className="primary-action wide" type="submit">
+          Login
+        </button>
+      </form>
+    </section>
+  );
+}
+
+function SignupScreen({ onSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleSignup(event) {
+    event.preventDefault();
+
+    localStorage.setItem(
+      "goldenhours-user",
+      JSON.stringify({ email, password })
+    );
+
+    alert("Signup successful!");
+    onSuccess();
+  }
+
+  return (
+    <section className="planner-view">
+      <div className="section-heading">
+        <p className="eyebrow">Signup</p>
+        <h1>Create Account</h1>
+      </div>
+
+      <form className="planner-form" onSubmit={handleSignup}>
+        <label>Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter email"
+        />
+
+        <label>Password</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter password"
+        />
+
+        <button className="primary-action wide" type="submit">
+          Sign Up
+        </button>
+      </form>
+    </section>
+  );
+}
 
 function useLocalStorage(key, initialValue) {
   const [value, setValue] = useState(() => {
