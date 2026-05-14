@@ -33,7 +33,7 @@ function App() {
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/sw.js").catch(() => { });
     }
   }, []);
 
@@ -86,6 +86,15 @@ function App() {
     setSavedPlans(current);
     setDraggedId(null);
   }
+  function moveStop(stopId, direction) {
+    const current = [...plannedStops];
+    const fromIndex = current.findIndex((place) => place.id === stopId);
+    const toIndex = fromIndex + direction;
+    if (fromIndex < 0 || toIndex < 0 || toIndex >= current.length) return;
+    const [moved] = current.splice(fromIndex, 1);
+    current.splice(toIndex, 0, moved);
+    setSavedPlans(current);
+  }
 
   return (
     <div className="app-shell">
@@ -104,14 +113,14 @@ function App() {
               className={screen === item ? "active" : ""}
               type="button"
               onClick={() => {
-  if (!isLoggedIn && item !== "Home") {
-    alert("Please login first");
-    setScreen("Login");
-    return;
-  }
+                if (!isLoggedIn && item !== "Home") {
+                  alert("Please login first");
+                  setScreen("Login");
+                  return;
+                }
 
-  setScreen(item);
-}}
+                setScreen(item);
+              }}
             >
               {item}
             </button>
@@ -121,11 +130,11 @@ function App() {
 
       <main>
         {screen === "Home" && (
-  <HomeScreen
-    onStart={() => setScreen("Signup")}
-    onLogin={() => setScreen("Login")}
-  />
-)}
+          <HomeScreen
+            onStart={() => setScreen("Signup")}
+            onLogin={() => setScreen("Login")}
+          />
+        )}
         {screen === "Plan" && (
           <PlanScreen
             detectLocation={detectLocation}
@@ -147,6 +156,7 @@ function App() {
             selectedHours={selectedHours}
             setDraggedId={setDraggedId}
             handleDrop={handleDrop}
+            moveStop={moveStop}
             onMap={() => setScreen("Map")}
           />
         )}
@@ -159,19 +169,19 @@ function App() {
           />
         )}
         {screen === "Login" && (
-  <LoginScreen
-    onSuccess={() => {
-  setIsLoggedIn(true);
-  setScreen("Plan");
-}}
-  />
-)}
+          <LoginScreen
+            onSuccess={() => {
+              setIsLoggedIn(true);
+              setScreen("Plan");
+            }}
+          />
+        )}
 
-{screen === "Signup" && (
-  <SignupScreen
-    onSuccess={() => setScreen("Login")}
-  />
-)}
+        {screen === "Signup" && (
+          <SignupScreen
+            onSuccess={() => setScreen("Login")}
+          />
+        )}
       </main>
 
       <aside className="status-panel" aria-label="Project requirement status">
@@ -189,14 +199,14 @@ function App() {
             className={screen === item ? "active" : ""}
             type="button"
             onClick={() => {
-  if (!isLoggedIn && item !== "Home") {
-    alert("Please login first");
-    setScreen("Login");
-    return;
-  }
+              if (!isLoggedIn && item !== "Home") {
+                alert("Please login first");
+                setScreen("Login");
+                return;
+              }
 
-  setScreen(item);
-}}
+              setScreen(item);
+            }}
             aria-label={`Open ${item}`}
           >
             <span aria-hidden="true">{iconFor(item)}</span>
@@ -325,7 +335,7 @@ function PlanScreen(props) {
   );
 }
 
-function ItineraryScreen({ plannedStops, selectedHours, setDraggedId, handleDrop, onMap }) {
+function ItineraryScreen({ plannedStops, selectedHours, setDraggedId, handleDrop, moveStop, onMap }) {
   return (
     <section className="itinerary-view" aria-labelledby="itinerary-title">
       <div className="section-heading inline">
@@ -335,7 +345,8 @@ function ItineraryScreen({ plannedStops, selectedHours, setDraggedId, handleDrop
         </div>
         <span className="pill">{plannedStops.length} stops</span>
       </div>
-      <ol className="timeline" aria-label="Draggable itinerary stops">
+      <p className="hint">Drag a stop to reorder it, or use the up and down buttons.</p>
+      <ol className="timeline" aria-label="Itinerary stops, reorderable">
         {plannedStops.map((place, index) => (
           <li
             key={place.id}
@@ -353,6 +364,24 @@ function ItineraryScreen({ plannedStops, selectedHours, setDraggedId, handleDrop
               <p className="rating">Rating {place.rating} from {place.reviews} reviews</p>
               <p>{place.duration} min - {place.walk} min walk - {place.distance}</p>
               <small>{place.description}</small>
+              <div className="reorder-controls">
+                <button
+                  type="button"
+                  onClick={() => moveStop(place.id, -1)}
+                  disabled={index === 0}
+                  aria-label={`Move ${place.name} up`}
+                >
+                  ↑ Up
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveStop(place.id, 1)}
+                  disabled={index === plannedStops.length - 1}
+                  aria-label={`Move ${place.name} down`}
+                >
+                  ↓ Down
+                </button>
+              </div>
             </article>
           </li>
         ))}
