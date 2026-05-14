@@ -458,47 +458,64 @@ function MapScreen({ plannedStops, position, routeMode, setRouteMode }) {
 function LoginScreen({ onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("");
 
   function handleLogin(event) {
     event.preventDefault();
+    setStatus("");
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setStatus("Please enter both your email and password.");
+      return;
+    }
 
     const savedUser = JSON.parse(localStorage.getItem("goldenhours-user"));
 
     if (
       savedUser &&
-      savedUser.email === email &&
-      savedUser.password === password
+      savedUser.email === cleanEmail &&
+      savedUser.password === cleanPassword
     ) {
-      alert("Login successful!");
       onSuccess();
     } else {
-      alert("Invalid credentials");
+      setStatus("Invalid credentials. Please check your email and password.");
     }
   }
 
   return (
-    <section className="planner-view">
+    <section className="planner-view" aria-labelledby="login-title">
       <div className="section-heading">
         <p className="eyebrow">Login</p>
-        <h1>Welcome Back</h1>
+        <h1 id="login-title">Welcome Back</h1>
       </div>
 
       <form className="planner-form" onSubmit={handleLogin}>
-        <label>Email</label>
+        <label htmlFor="login-email">Email</label>
         <input
+          id="login-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter email"
         />
 
-        <label>Password</label>
+        <label htmlFor="login-password">Password</label>
         <input
+          id="login-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter password"
         />
+
+        {status && (
+          <p className="form-status" role="status">
+            {status}
+          </p>
+        )}
 
         <button className="primary-action wide" type="submit">
           Login
