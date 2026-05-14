@@ -111,7 +111,12 @@ function App() {
       </header>
 
       <main>
-        {screen === "Home" && <HomeScreen onStart={() => setScreen("Plan")} />}
+        {screen === "Home" && (
+  <HomeScreen
+    onStart={() => setScreen("Signup")}
+    onLogin={() => setScreen("Login")}
+  />
+)}
         {screen === "Plan" && (
           <PlanScreen
             detectLocation={detectLocation}
@@ -144,6 +149,17 @@ function App() {
             setRouteMode={setRouteMode}
           />
         )}
+        {screen === "Login" && (
+  <LoginScreen
+    onSuccess={() => setScreen("Plan")}
+  />
+)}
+
+{screen === "Signup" && (
+  <SignupScreen
+    onSuccess={() => setScreen("Login")}
+  />
+)}
       </main>
 
       <aside className="status-panel" aria-label="Project requirement status">
