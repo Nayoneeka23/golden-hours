@@ -9,6 +9,7 @@ const navItems = ["Home", "Plan", "Itinerary", "Map"];
 
 function App() {
   const [screen, setScreen] = useState("Home");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [places, setPlaces] = useState([]);
   const [selectedHours, setSelectedHours] = useLocalStorage("goldenhours-hours", 2);
   const [interests, setInterests] = useLocalStorage("goldenhours-interests", ["Culture", "Food"]);
@@ -102,7 +103,15 @@ function App() {
               key={item}
               className={screen === item ? "active" : ""}
               type="button"
-              onClick={() => setScreen(item)}
+              onClick={() => {
+  if (!isLoggedIn && item !== "Home") {
+    alert("Please login first");
+    setScreen("Login");
+    return;
+  }
+
+  setScreen(item);
+}}
             >
               {item}
             </button>
@@ -151,7 +160,10 @@ function App() {
         )}
         {screen === "Login" && (
   <LoginScreen
-    onSuccess={() => setScreen("Plan")}
+    onSuccess={() => {
+  setIsLoggedIn(true);
+  setScreen("Plan");
+}}
   />
 )}
 
@@ -176,7 +188,15 @@ function App() {
             key={item}
             className={screen === item ? "active" : ""}
             type="button"
-            onClick={() => setScreen(item)}
+            onClick={() => {
+  if (!isLoggedIn && item !== "Home") {
+    alert("Please login first");
+    setScreen("Login");
+    return;
+  }
+
+  setScreen(item);
+}}
             aria-label={`Open ${item}`}
           >
             <span aria-hidden="true">{iconFor(item)}</span>
