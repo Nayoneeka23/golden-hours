@@ -552,3 +552,8 @@ fieldset {
   cursor: not-allowed;
   opacity: 0.5;
 }
+.form-status {
+  color: #b3261e;
+  font-weight: 700;
+  margin: 4px 0 0;
+}
