@@ -528,43 +528,52 @@ function LoginScreen({ onSuccess }) {
 function SignupScreen({ onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("");
 
   function handleSignup(event) {
     event.preventDefault();
-
+    setStatus("");
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    if (!cleanEmail || !cleanPassword) {
+      setStatus("Please enter both an email and a password.");
+      return;
+    }
     localStorage.setItem(
       "goldenhours-user",
-      JSON.stringify({ email, password })
+      JSON.stringify({ email: cleanEmail, password: cleanPassword })
     );
-
-    alert("Signup successful!");
     onSuccess();
   }
 
   return (
-    <section className="planner-view">
+    <section className="planner-view" aria-labelledby="signup-title">
       <div className="section-heading">
         <p className="eyebrow">Signup</p>
-        <h1>Create Account</h1>
+        <h1 id="signup-title">Create Account</h1>
       </div>
-
       <form className="planner-form" onSubmit={handleSignup}>
-        <label>Email</label>
+        <label htmlFor="signup-email">Email</label>
         <input
+          id="signup-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter email"
         />
-
-        <label>Password</label>
+        <label htmlFor="signup-password">Password</label>
         <input
+          id="signup-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter password"
         />
-
+        {status && (
+          <p className="form-status" role="status">
+            {status}
+          </p>
+        )}
         <button className="primary-action wide" type="submit">
           Sign Up
         </button>
