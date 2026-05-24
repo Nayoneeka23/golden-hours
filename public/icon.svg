@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="GoldenHours icon">
+  <rect width="128" height="128" rx="26" fill="#173626"/>
+  <path d="M34 24h60v18c0 14-9 24-21 27 12 3 21 13 21 27v8H34v-8c0-14 9-24 21-27-12-3-21-13-21-27V24Z" fill="#f7f2ea"/>
+  <path d="M45 36h38v7c0 11-8 19-19 19s-19-8-19-19v-7Zm0 68v-6c0-11 8-19 19-19s19 8 19 19v6H45Z" fill="#c9582d"/>
+</svg>
