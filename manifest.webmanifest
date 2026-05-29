@@ -1,0 +1,17 @@
+{
+  "name": "GoldenHours",
+  "short_name": "GoldenHours",
+  "description": "A short-trip planner that turns 1 to 4 free hours into a clear city itinerary.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f2ea",
+  "theme_color": "#173626",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

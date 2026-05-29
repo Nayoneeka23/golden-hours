@@ -1,0 +1,80 @@
+[
+  {
+    "id": "museum-quarter",
+    "name": "Historic Museum Quarter",
+    "category": "Culture",
+    "duration": 45,
+    "walk": 5,
+    "rating": 4.5,
+    "reviews": 280,
+    "description": "Compact galleries, local history rooms, and a shaded plaza for a quick pause.",
+    "distance": "450 m",
+    "lat": 43.701,
+    "lng": 7.268
+  },
+  {
+    "id": "street-market",
+    "name": "Local Street Food Market",
+    "category": "Food",
+    "duration": 40,
+    "walk": 8,
+    "rating": 4.8,
+    "reviews": 512,
+    "description": "Fast regional bites, fresh juice counters, and a lively lunch-hour atmosphere.",
+    "distance": "700 m",
+    "lat": 43.702,
+    "lng": 7.263
+  },
+  {
+    "id": "riverside-park",
+    "name": "Riverside Park and Gardens",
+    "category": "Nature",
+    "duration": 35,
+    "walk": 6,
+    "rating": 4.3,
+    "reviews": 174,
+    "description": "A relaxed green stop with river views, benches, and an easy photo route.",
+    "distance": "1.1 km",
+    "lat": 43.697,
+    "lng": 7.266
+  },
+  {
+    "id": "design-arcade",
+    "name": "Independent Design Arcade",
+    "category": "Shopping",
+    "duration": 30,
+    "walk": 7,
+    "rating": 4.4,
+    "reviews": 136,
+    "description": "Small makers, postcards, ceramics, and gift shops grouped under one arcade.",
+    "distance": "900 m",
+    "lat": 43.704,
+    "lng": 7.261
+  },
+  {
+    "id": "old-town-lanes",
+    "name": "Old Town Walking Lanes",
+    "category": "History",
+    "duration": 50,
+    "walk": 4,
+    "rating": 4.7,
+    "reviews": 398,
+    "description": "Narrow streets, heritage facades, and short plaques that make the route self-guided.",
+    "distance": "600 m",
+    "lat": 43.699,
+    "lng": 7.271
+  },
+  {
+    "id": "sunset-belvedere",
+    "name": "Sunset Belvedere",
+    "category": "Art",
+    "duration": 35,
+    "walk": 10,
+    "rating": 4.6,
+    "reviews": 221,
+    "description": "A small viewpoint with murals, skyline angles, and golden-hour photo spots.",
+    "distance": "1.4 km",
+    "lat": 43.706,
+    "lng": 7.272
+  }
+]
