@@ -1,0 +1,312 @@
+/* Global ambient + motion (transform/opacity only for smoothness) */
+
+.fx-layer {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+.fx-orb {
+  animation: orb-drift var(--dur, 18s) ease-in-out infinite alternate;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: var(--op, 0.35);
+  position: absolute;
+}
+
+.fx-orb--warm {
+  background: radial-gradient(circle, rgba(201, 88, 45, 0.55), transparent 70%);
+  height: 280px;
+  left: -8%;
+  top: 12%;
+  width: 280px;
+}
+
+.fx-orb--deep {
+  animation-delay: -6s;
+  background: radial-gradient(circle, rgba(23, 54, 38, 0.45), transparent 70%);
+  height: 320px;
+  right: -6%;
+  top: 38%;
+  width: 320px;
+}
+
+.fx-orb--gold {
+  animation-delay: -12s;
+  --dur: 22s;
+  background: radial-gradient(circle, rgba(216, 161, 29, 0.4), transparent 70%);
+  bottom: 8%;
+  height: 240px;
+  left: 35%;
+  width: 240px;
+}
+
+.fx-grid {
+  animation: grid-pulse 8s ease-in-out infinite;
+  background-image:
+    linear-gradient(rgba(29, 45, 61, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 45, 61, 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  inset: 0;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 30%, black, transparent);
+  opacity: 0.5;
+  position: absolute;
+}
+
+.fx-spark {
+  animation: spark-float var(--dur, 5s) ease-in-out infinite;
+  background: var(--warm);
+  border-radius: 50%;
+  height: 6px;
+  opacity: 0.5;
+  position: absolute;
+  width: 6px;
+}
+
+.fx-spark--1 { left: 18%; top: 22%; --dur: 4.2s; }
+.fx-spark--2 { right: 22%; top: 18%; --dur: 5.8s; animation-delay: -1s; background: var(--gold); }
+.fx-spark--3 { left: 42%; bottom: 24%; --dur: 6.4s; animation-delay: -2s; }
+.fx-spark--4 { right: 14%; bottom: 30%; --dur: 4.8s; animation-delay: -3s; }
+
+@keyframes orb-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(3%, -4%) scale(1.08); }
+}
+
+@keyframes grid-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.55; }
+}
+
+@keyframes spark-float {
+  0%, 100% { opacity: 0.2; transform: translateY(0) scale(1); }
+  50% { opacity: 0.7; transform: translateY(-18px) scale(1.4); }
+}
+
+/* Screen enter */
+.screen-panel {
+  animation: screen-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.anim-rise {
+  animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-rise-delay-1 { animation-delay: 0.08s; }
+.anim-rise-delay-2 { animation-delay: 0.16s; }
+.anim-rise-delay-3 { animation-delay: 0.24s; }
+.anim-rise-delay-4 { animation-delay: 0.32s; }
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger children */
+.stagger-children > * {
+  animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* Title shimmer */
+.title-shimmer span {
+  animation: warm-glow 3s ease-in-out infinite;
+}
+
+@keyframes warm-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
+}
+
+/* Buttons */
+.primary-action {
+  animation: btn-glow 2.5s ease-in-out infinite;
+  background: var(--warm);
+  border: 2px solid var(--warm);
+  color: var(--white);
+  overflow: hidden;
+  position: relative;
+  z-index: 0;
+}
+
+.primary-action::after {
+  animation: shine-sweep 3s ease-in-out infinite;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 253, 250, 0.35) 50%, transparent 65%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-120%);
+}
+
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(201, 88, 45, 0.25); }
+  50% { box-shadow: 0 8px 32px rgba(201, 88, 45, 0.45); }
+}
+
+@keyframes shine-sweep {
+  0%, 100% { transform: translateX(-120%); }
+  45%, 55% { transform: translateX(120%); }
+}
+
+.secondary-action {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.secondary-action:hover {
+  box-shadow: 0 6px 20px rgba(23, 54, 38, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Topbar */
+.brand-mark {
+  animation: mark-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes mark-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 88, 45, 0.35); }
+  50% { box-shadow: 0 0 0 10px rgba(201, 88, 45, 0); }
+}
+
+.desktop-nav button {
+  position: relative;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.desktop-nav button:hover {
+  transform: translateY(-1px);
+}
+
+.desktop-nav .active {
+  animation: nav-pop 0.4s ease;
+}
+
+@keyframes nav-pop {
+  0% { transform: scale(0.92); }
+  70% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* Cards */
+.planner-form,
+.stop-card,
+.saved-card,
+.showcase-orbit-wrap {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.planner-form:hover,
+.saved-card:hover {
+  box-shadow: 0 20px 48px rgba(29, 45, 61, 0.12);
+  transform: translateY(-3px);
+}
+
+.timeline li {
+  animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.timeline li:nth-child(1) { animation-delay: 0.06s; }
+.timeline li:nth-child(2) { animation-delay: 0.12s; }
+.timeline li:nth-child(3) { animation-delay: 0.18s; }
+.timeline li:nth-child(4) { animation-delay: 0.24s; }
+.timeline li:nth-child(5) { animation-delay: 0.3s; }
+
+.stop-card:hover {
+  border-color: rgba(201, 88, 45, 0.35);
+  transform: translateX(6px);
+}
+
+.segmented-control .selected,
+.chip-grid .selected {
+  animation: chip-pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes chip-pop {
+  0% { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+.time-bar .time-fill {
+  animation: bar-fill 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  height: 100%;
+  transform: scaleX(var(--fill, 0));
+  transform-origin: left center;
+  width: 100%;
+}
+
+@keyframes bar-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(var(--fill, 1)); }
+}
+
+.location-results {
+  animation: drop-in 0.3s ease both;
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.embedded-map-box {
+  animation: map-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes map-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-layer,
+  .fx-orb,
+  .fx-grid,
+  .fx-spark,
+  .primary-action,
+  .primary-action::after,
+  .brand-mark,
+  .screen-panel,
+  .anim-rise,
+  .stagger-children > *,
+  .timeline li,
+  .time-fill {
+    animation: none !important;
+  }
+}

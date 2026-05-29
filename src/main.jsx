@@ -1,8 +1,19 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles.css";
+import "./motion.css";
+import {
+  calculateItineraryMinutes,
+  formatMinutesLabel,
+  getTimeBudgetMinutes,
+  itineraryFitsBudget,
+  selectStopsWithinBudget,
+  trimStopsToBudget,
+} from "./itinerary.js";
 
 const timeOptions = [1, 2, 3, 4];
 const interestOptions = ["Culture", "Food", "Nature", "Shopping", "Art", "History"];
@@ -27,6 +38,10 @@ function App() {
   const [draggedId, setDraggedId] = useState(null);
 
   useEffect(() => {
+    setServerPlan([]);
+  }, [selectedHours, pace, interests, routeMode]);
+
+  useEffect(() => {
     fetchJson("/api/places")
       .then((response) => response.json())
       .then((items) => {
@@ -43,11 +58,28 @@ function App() {
       );
   }, []);
   const plannedStops = useMemo(() => {
-    const preferred = places.filter((place) => interests.includes(place.category));
-    const rest = places.filter((place) => !interests.includes(place.category));
-    const ordered = [...preferred, ...rest].slice(0, Math.min(places.length, selectedHours + 1));
-    return savedPlans.length ? savedPlans : serverPlan.length ? serverPlan : ordered;
-  }, [interests, places, savedPlans, selectedHours, serverPlan]);
+    if (savedPlans.length) {
+      return trimStopsToBudget(savedPlans, selectedHours, pace, routeMode);
+    }
+    if (serverPlan.length) {
+      return serverPlan;
+    }
+    if (!places.length) return [];
+    return selectStopsWithinBudget(places, {
+      hours: selectedHours,
+      interests,
+      pace,
+      routeMode,
+    });
+  }, [interests, places, pace, routeMode, savedPlans, selectedHours, serverPlan]);
+
+  const planTimeSummary = useMemo(
+    () => ({
+      used: calculateItineraryMinutes(plannedStops, routeMode, pace),
+      budget: getTimeBudgetMinutes(selectedHours, pace),
+    }),
+    [plannedStops, pace, routeMode, selectedHours],
+  );
 
   function toggleInterest(interest) {
     setInterests((current) =>
@@ -114,9 +146,17 @@ function App() {
         }),
       });
       const plan = await response.json();
-      setServerPlan(plan.stops || []);
+      const stops = plan.stops || [];
+      setServerPlan(stops);
       setRouteSummary(plan.route || null);
-      toast.success("Trip plan created.");
+
+      if (stops.length === 0) {
+        toast.warn(`No stops fit in a ${selectedHours}h ${pace.toLowerCase()} trip. Try more time or fewer interests.`);
+      } else {
+        const used = plan.plannedMinutes ?? calculateItineraryMinutes(stops, routeMode, pace);
+        const budget = plan.budgetMinutes ?? getTimeBudgetMinutes(selectedHours, pace);
+        toast.success(`Trip ready — ${formatMinutesLabel(used)} of ${formatMinutesLabel(budget)}.`);
+      }
 
       await fetchJson("/api/plans", {
         method: "POST",
@@ -125,12 +165,33 @@ function App() {
       });
       refreshSavedTrips();
     } catch {
-      setServerPlan([]);
+      const localStops = selectStopsWithinBudget(places, {
+        hours: selectedHours,
+        interests,
+        pace,
+        routeMode,
+      });
+      setServerPlan(localStops);
       setRouteSummary(null);
-      toast.info("Using the local trip planner.");
+      if (localStops.length === 0) {
+        toast.warn(`Nothing fits in ${selectedHours}h at ${pace} pace. Add time or relax interests.`);
+      } else {
+        toast.info("Using the local trip planner.");
+      }
     }
 
     navigate("Itinerary");
+  }
+
+  function applyStopOrder(nextOrder) {
+    if (!itineraryFitsBudget(nextOrder, selectedHours, pace, routeMode)) {
+      const used = calculateItineraryMinutes(nextOrder, routeMode, pace);
+      const budget = getTimeBudgetMinutes(selectedHours, pace);
+      toast.warn(`That route needs ${formatMinutesLabel(used)} but your window is ${formatMinutesLabel(budget)}.`);
+      return false;
+    }
+    setSavedPlans(nextOrder);
+    return true;
   }
 
   function handleDrop(targetId) {
@@ -141,10 +202,12 @@ function App() {
     if (fromIndex < 0 || toIndex < 0) return;
     const [moved] = current.splice(fromIndex, 1);
     current.splice(toIndex, 0, moved);
-    setSavedPlans(current);
+    if (applyStopOrder(current)) {
+      toast.success("Stop order updated.");
+    }
     setDraggedId(null);
-    toast.success("Stop order updated.");
   }
+
   function moveStop(stopId, direction) {
     const current = [...plannedStops];
     const fromIndex = current.findIndex((place) => place.id === stopId);
@@ -152,8 +215,9 @@ function App() {
     if (fromIndex < 0 || toIndex < 0 || toIndex >= current.length) return;
     const [moved] = current.splice(fromIndex, 1);
     current.splice(toIndex, 0, moved);
-    setSavedPlans(current);
-    toast.success("Stop order updated.");
+    if (applyStopOrder(current)) {
+      toast.success("Stop order updated.");
+    }
   }
 
   function navigate(nextScreen) {
@@ -180,14 +244,29 @@ function App() {
   }
 
   function loadSavedTrip(trip) {
-    setSavedPlans(trip.stops || []);
+    const trimmed = trimStopsToBudget(trip.stops || [], selectedHours, pace, routeMode);
+    setSavedPlans(trimmed);
     setRouteSummary(null);
     navigate("Itinerary");
-    toast.success("Saved trip loaded.");
+    if (trimmed.length < (trip.stops?.length || 0)) {
+      toast.info("Some stops were dropped because they no longer fit your time window.");
+    } else {
+      toast.success("Saved trip loaded.");
+    }
   }
 
   return (
     <div className="app-shell">
+      <div className="fx-layer" aria-hidden="true">
+        <div className="fx-grid" />
+        <div className="fx-orb fx-orb--warm" />
+        <div className="fx-orb fx-orb--deep" />
+        <div className="fx-orb fx-orb--gold" />
+        <span className="fx-spark fx-spark--1" />
+        <span className="fx-spark fx-spark--2" />
+        <span className="fx-spark fx-spark--3" />
+        <span className="fx-spark fx-spark--4" />
+      </div>
       <header className="topbar">
         <a className="brand" href="#home" onClick={() => navigate("Home")} aria-label="GoldenHours home">
           <span className="brand-mark">GH</span>
@@ -246,6 +325,7 @@ function App() {
         {screen === "Itinerary" && (
           <ItineraryScreen
             plannedStops={plannedStops}
+            planTimeSummary={planTimeSummary}
             selectedHours={selectedHours}
             setDraggedId={setDraggedId}
             handleDrop={handleDrop}
@@ -309,23 +389,39 @@ function App() {
           </button>
         ))}
       </footer>
-      <ToastContainer position="top-right" autoClose={2200} />
+      <ToastContainer position="top-right" autoClose={2200} theme="light" hideProgressBar />
     </div>
   );
 }
 
+const heroChips = [
+  { label: "1–4h", icon: "◷" },
+  { label: "Interests", icon: "✦" },
+  { label: "Routes", icon: "↝" },
+];
+
+const orbitTags = ["Culture", "Food", "Nature", "Map"];
+
 function HomeScreen({ onStart, onLogin }) {
   return (
-    <section className="hero" id="home" aria-labelledby="hero-title">
+    <section className="hero hero-cinematic screen-panel" id="home" aria-labelledby="hero-title">
       <article className="hero-copy" itemScope itemType="https://schema.org/SoftwareApplication">
-        <h1 id="hero-title" itemProp="name">
+        <p className="hero-tag anim-rise">Spare time → city routes</p>
+        <h1 id="hero-title" className="title-shimmer anim-rise anim-rise-delay-1" itemProp="name">
           Golden<span>Hours</span>
         </h1>
-        <p itemProp="description">
-          A mobile travel planner that turns 1 to 4 spare hours into a rated city itinerary with nearby
-          stops and clear route choices.
+        <p className="hero-lead anim-rise anim-rise-delay-2" itemProp="description">
+          Only stops that fit your clock.
         </p>
-        <div className="hero-actions">
+        <div className="hero-chips anim-rise anim-rise-delay-3" aria-label="Features">
+          {heroChips.map((chip) => (
+            <span className="hero-chip" key={chip.label}>
+              <em aria-hidden="true">{chip.icon}</em>
+              {chip.label}
+            </span>
+          ))}
+        </div>
+        <div className="hero-actions anim-rise anim-rise-delay-4">
           <button className="primary-action" type="button" onClick={onStart}>
             Get started
           </button>
@@ -334,17 +430,21 @@ function HomeScreen({ onStart, onLogin }) {
           </button>
         </div>
       </article>
-      <section className="phone-preview" aria-label="Application preview">
-        <div className="phone-notch" />
-        <div className="hourglass" aria-hidden="true">GH</div>
-        <h2>GoldenHours</h2>
-        <p>Make every hour count</p>
-        <div className="preview-tabs" aria-hidden="true">
-          <span className="active" />
-          <span />
-          <span />
+
+      <aside className="hero-visual" aria-hidden="true">
+        <div className="showcase-orbit-wrap">
+          <div className="orbit-ring orbit-ring--outer" />
+          <div className="orbit-ring orbit-ring--inner" />
+          <div className="orbit-core">
+            <span className="orbit-core-label">2h</span>
+          </div>
+          {orbitTags.map((tag, index) => (
+            <span className={`orbit-tag orbit-tag--${index + 1}`} key={tag}>
+              {tag}
+            </span>
+          ))}
         </div>
-      </section>
+      </aside>
     </section>
   );
 }
@@ -383,11 +483,11 @@ function PlanScreen(props) {
   }, [props.location, searchTerm]);
 
   return (
-    <section className="planner-view" aria-labelledby="plan-title">
-      <div className="section-heading">
+    <section className="planner-view screen-panel" aria-labelledby="plan-title">
+      <div className="section-heading anim-rise">
         <h1 id="plan-title">Plan Your Trip</h1>
       </div>
-      <form className="planner-form" onSubmit={props.generatePlan}>
+      <form className="planner-form anim-rise anim-rise-delay-1" onSubmit={props.generatePlan}>
         <label className="field-label" htmlFor="location">
           Location
         </label>
@@ -508,9 +608,13 @@ function PlanScreen(props) {
   );
 }
 
-function ItineraryScreen({ plannedStops, selectedHours, setDraggedId, handleDrop, moveStop, onMap, onSaved, onBack }) {
+function ItineraryScreen({ plannedStops, planTimeSummary, selectedHours, setDraggedId, handleDrop, moveStop, onMap, onSaved, onBack }) {
+  const fillPercent = planTimeSummary.budget
+    ? Math.min(100, Math.round((planTimeSummary.used / planTimeSummary.budget) * 100))
+    : 0;
+
   return (
-    <section className="itinerary-view" aria-labelledby="itinerary-title">
+    <section className="itinerary-view screen-panel" aria-labelledby="itinerary-title">
       <div className="section-heading inline">
         <div>
           <BackButton onClick={onBack} />
@@ -518,6 +622,26 @@ function ItineraryScreen({ plannedStops, selectedHours, setDraggedId, handleDrop
         </div>
         <span className="pill">{plannedStops.length} stops</span>
       </div>
+
+      <div className="plan-time-bar anim-rise" aria-label="Time budget for this trip">
+        <div className="time-budget-labels">
+          <span>Scheduled time</span>
+          <span>
+            {formatMinutesLabel(planTimeSummary.used)} / {formatMinutesLabel(planTimeSummary.budget)}
+          </span>
+        </div>
+        <div className="time-bar">
+          <div
+            className={`time-fill ${fillPercent > 95 ? "time-fill--full" : ""}`}
+            style={{ "--fill": `${fillPercent / 100}` }}
+          />
+        </div>
+      </div>
+
+      {plannedStops.length === 0 && (
+        <p className="hint">No stops fit this time window. Go back to Plan and add more hours or fewer interests.</p>
+      )}
+
       <ol className="timeline" aria-label="Itinerary stops, reorderable">
         {plannedStops.map((place, index) => (
           <li
@@ -617,8 +741,8 @@ function MapScreen({ plannedStops, position, routeSummary, routeMode, setRouteMo
     : "Route distance will appear after generating a plan.";
 
   return (
-    <section className="map-view" aria-labelledby="map-title">
-      <div className="section-heading inline">
+    <section className="map-view screen-panel" aria-labelledby="map-title">
+      <div className="section-heading inline anim-rise">
         <div>
           <BackButton onClick={onBack} />
           <h1 id="map-title">Route Map</h1>
@@ -672,15 +796,15 @@ function RouteMap({ plannedStops, position, routeSummary }) {
   const layerGroup = useRef(null);
 
   useEffect(() => {
-    if (!mapRef.current || !window.L) return;
+    if (!mapRef.current) return;
 
     if (!mapInstance.current) {
-      mapInstance.current = window.L.map(mapRef.current, { scrollWheelZoom: false }).setView([43.7, 7.26], 13);
-      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      mapInstance.current = L.map(mapRef.current, { scrollWheelZoom: false }).setView([43.7, 7.26], 13);
+      L.tileLayer("/api/map-tile/{z}/{x}/{y}.png", {
         maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors"
+        attribution: "&copy; OpenStreetMap contributors, Geoapify"
       }).addTo(mapInstance.current);
-      layerGroup.current = window.L.layerGroup().addTo(mapInstance.current);
+      layerGroup.current = L.layerGroup().addTo(mapInstance.current);
     }
 
     layerGroup.current.clearLayers();
@@ -690,13 +814,13 @@ function RouteMap({ plannedStops, position, routeSummary }) {
     ].filter(Boolean);
 
     points.forEach((point) => {
-      window.L.marker([point.lat, point.lng]).addTo(layerGroup.current).bindPopup(point.name);
+      L.marker([point.lat, point.lng]).addTo(layerGroup.current).bindPopup(point.name);
     });
 
-    const geometryPoints = routeSummary?.geometry?.coordinates?.map(([lng, lat]) => [lat, lng]);
+    const geometryPoints = flattenGeometry(routeSummary?.geometry);
     const linePoints = geometryPoints?.length ? geometryPoints : points.map((point) => [point.lat, point.lng]);
     if (linePoints.length > 1) {
-      const routeLine = window.L.polyline(linePoints, { color: "#c9582d", weight: 5, opacity: 0.9 }).addTo(layerGroup.current);
+      const routeLine = L.polyline(linePoints, { color: "#c9582d", weight: 5, opacity: 0.9 }).addTo(layerGroup.current);
       mapInstance.current.fitBounds(routeLine.getBounds(), { padding: [28, 28] });
     } else if (points.length === 1) {
       mapInstance.current.setView([points[0].lat, points[0].lng], 14);
@@ -707,14 +831,25 @@ function RouteMap({ plannedStops, position, routeSummary }) {
 
   return <div className="live-route-map" ref={mapRef} aria-label="Route map" />;
 }
+
+function flattenGeometry(geometry) {
+  if (!geometry?.coordinates) return [];
+  if (geometry.type === "LineString") {
+    return geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+  }
+  if (geometry.type === "MultiLineString") {
+    return geometry.coordinates.flatMap((line) => line.map(([lng, lat]) => [lat, lng]));
+  }
+  return [];
+}
 function SavedTripsScreen({ trips, onLoad, onBack }) {
   return (
-    <section className="saved-view" aria-labelledby="saved-title">
-      <div className="section-heading">
+    <section className="saved-view screen-panel" aria-labelledby="saved-title">
+      <div className="section-heading anim-rise">
         <BackButton onClick={onBack} />
         <h1 id="saved-title">Saved Trips</h1>
       </div>
-      <div className="saved-list">
+      <div className="saved-list stagger-children">
         {trips.length === 0 && <p>No saved trips yet.</p>}
         {trips.map((trip) => (
           <article className="saved-card" key={trip.id}>
@@ -764,13 +899,13 @@ function LoginScreen({ onSuccess, onBack }) {
   }
 
   return (
-    <section className="planner-view" aria-labelledby="login-title">
-      <div className="section-heading">
+    <section className="planner-view screen-panel" aria-labelledby="login-title">
+      <div className="section-heading anim-rise">
         <BackButton onClick={onBack} />
         <h1 id="login-title">Welcome Back</h1>
       </div>
 
-      <form className="planner-form" onSubmit={handleLogin}>
+      <form className="planner-form anim-rise anim-rise-delay-1" onSubmit={handleLogin}>
         <label htmlFor="login-email">Email</label>
         <input
           id="login-email"
@@ -821,12 +956,12 @@ function SignupScreen({ onSuccess, onBack }) {
   }
 
   return (
-    <section className="planner-view" aria-labelledby="signup-title">
-      <div className="section-heading">
+    <section className="planner-view screen-panel" aria-labelledby="signup-title">
+      <div className="section-heading anim-rise">
         <BackButton onClick={onBack} />
         <h1 id="signup-title">Create Account</h1>
       </div>
-      <form className="planner-form" onSubmit={handleSignup}>
+      <form className="planner-form anim-rise anim-rise-delay-1" onSubmit={handleSignup}>
         <label htmlFor="signup-email">Email</label>
         <input
           id="signup-email"

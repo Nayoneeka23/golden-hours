@@ -2,11 +2,17 @@ import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  calculateItineraryMinutes,
+  getTimeBudgetMinutes,
+  selectStopsWithinBudget,
+} from "../src/itinerary.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 5174);
 const placesPath = path.join(__dirname, "data", "places.json");
 const savedPlansPath = path.join(__dirname, "data", "saved-plans.json");
+const GEOAPIFY_API_KEY = "170e5df1a4b648c19721b88d7326ed06";
 
 createServer(async (request, response) => {
   try {
@@ -29,6 +35,11 @@ createServer(async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/geocode") {
       sendJson(response, 200, await searchLocations(url.searchParams.get("q")));
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/api/map-tile/")) {
+      await sendMapTile(response, url.pathname);
       return;
     }
 
@@ -87,31 +98,49 @@ async function searchLocations(query) {
   if (cleanQuery.length < 2) return [];
 
   const params = new URLSearchParams({
-    q: cleanQuery,
-    format: "jsonv2",
-    addressdetails: "1",
-    limit: "6"
+    text: cleanQuery,
+    limit: "6",
+    apiKey: GEOAPIFY_API_KEY
   });
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-    headers: {
-      "Accept": "application/json",
-      "User-Agent": "GoldenHours student project"
-    }
-  });
+  const response = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?${params.toString()}`);
 
   if (!response.ok) return [];
 
-  const results = await response.json();
-  return results
-    .map((item) => ({
-      id: `osm-${item.place_id}`,
-      name: item.name || item.display_name?.split(",")[0] || "Selected location",
-      label: item.display_name,
-      lat: Number(item.lat),
-      lng: Number(item.lon),
-      source: "OpenStreetMap"
+  const payload = await response.json();
+  return (payload.features || [])
+    .map((feature) => ({
+      id: `geoapify-${feature.properties?.place_id}`,
+      name: feature.properties?.name || feature.properties?.address_line1 || "Selected location",
+      label: feature.properties?.formatted || feature.properties?.address_line2 || "Geoapify result",
+      lat: Number(feature.properties?.lat),
+      lng: Number(feature.properties?.lon),
+      source: "Geoapify"
     }))
     .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+}
+
+async function sendMapTile(response, pathname) {
+  const match = pathname.match(/^\/api\/map-tile\/(\d+)\/(\d+)\/(\d+)\.png$/);
+  if (!match) {
+    sendJson(response, 404, { error: "Tile not found" });
+    return;
+  }
+
+  const [, z, x, y] = match;
+  const tileUrl = `https://maps.geoapify.com/v1/tile/osm-bright/${z}/${x}/${y}.png?apiKey=${GEOAPIFY_API_KEY}`;
+  const tileResponse = await fetch(tileUrl);
+
+  if (!tileResponse.ok) {
+    sendJson(response, 502, { error: "Map tile unavailable" });
+    return;
+  }
+
+  const tileBuffer = Buffer.from(await tileResponse.arrayBuffer());
+  sendCors(response, 200, {
+    "Cache-Control": "public, max-age=86400",
+    "Content-Type": tileResponse.headers.get("content-type") || "image/png"
+  });
+  response.end(tileBuffer);
 }
 
 async function generateItinerary(places, body) {
@@ -121,21 +150,18 @@ async function generateItinerary(places, body) {
   const routeMode = body.routeMode || "Walk";
   const interests = Array.isArray(body.interests) ? body.interests : [];
   const position = normalizePoint(body.position);
-  const maxStops = Math.min(places.length, hours + (pace === "Fast" ? 2 : 1));
+  const budgetMinutes = getTimeBudgetMinutes(hours, pace);
 
-  const preferred = places
-    .filter((place) => interests.includes(place.category))
-    .sort((a, b) => b.rating - a.rating);
-  const remaining = places
-    .filter((place) => !interests.includes(place.category))
-    .sort((a, b) => b.rating - a.rating);
-  const stops = [...preferred, ...remaining].slice(0, maxStops);
+  const stops = selectStopsWithinBudget(places, { hours, interests, pace, routeMode });
   const route = await buildRouteDetails(stops, routeMode, position);
+  const plannedMinutes = calculateItineraryMinutes(stops, routeMode, pace);
 
   return {
     location,
     hours,
     pace,
+    budgetMinutes,
+    plannedMinutes,
     stops: attachRouteLegs(stops, route.legs, routeMode),
     route,
     carbon: estimateCarbon(stops, routeMode)
@@ -182,6 +208,9 @@ function attachRouteLegs(stops, legs, routeMode) {
 }
 
 async function getRouteMetrics(points, routeMode) {
+  const geoapifyRoute = await getGeoapifyDistance(points, routeMode);
+  if (geoapifyRoute) return geoapifyRoute;
+
   const googleRoute = await getGoogleDistance(points, routeMode);
   if (googleRoute) return googleRoute;
 
@@ -189,6 +218,38 @@ async function getRouteMetrics(points, routeMode) {
   if (osrmRoute) return osrmRoute;
 
   return getStraightLineDistance(points, routeMode);
+}
+
+async function getGeoapifyDistance(points, routeMode) {
+  try {
+    const waypoints = points.map(formatPoint).join("|");
+    const mode = routeMode === "Transit" ? "transit" : "walk";
+    const params = new URLSearchParams({ waypoints, mode, apiKey: GEOAPIFY_API_KEY });
+    const response = await fetch(`https://api.geoapify.com/v1/routing?${params.toString()}`);
+    if (!response.ok) return null;
+
+    const payload = await response.json();
+    const route = payload.features?.[0];
+    const properties = route?.properties;
+    if (!properties) return null;
+
+    const legs = Array.isArray(properties.legs)
+      ? properties.legs.map((leg) => ({
+          distanceKm: Number((leg.distance / 1000).toFixed(2)),
+          travelMinutes: Math.max(1, Math.round(leg.time / 60))
+        }))
+      : [];
+
+    return {
+      distanceKm: Number((properties.distance / 1000).toFixed(2)),
+      travelMinutes: Math.max(1, Math.round(properties.time / 60)),
+      source: "Geoapify Routing API",
+      legs,
+      geometry: route.geometry
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function getGoogleDistance(points, routeMode) {
