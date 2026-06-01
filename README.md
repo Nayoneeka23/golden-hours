@@ -61,9 +61,3 @@ emissions.csv — results from the carbon measurement
 - Carbon footprint: approximately 5.7 mg CO2eq per session measured with CodeCarbon
 - GitLab commit history with 19 commits
 - Deployed at https://new-proj-ufyw.onrender.com/
-## Course requirements met
-- Lighthouse accessibility score: 95/100
-- W3C HTML validation: 0 errors, 0 warnings
-- Carbon footprint: approximately 5.7 mg CO2eq per session measured with CodeCarbon
-- GitLab commit history with 19 commits
-- Deployed at https://new-proj-ufyw.onrender.com/
