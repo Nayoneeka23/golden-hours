@@ -1,7 +1,7 @@
 # GoldenHours
 GoldenHours is a smart travel planning application designed specifically for people lacking time. Regular travel planning applications consider whole days when designing an itinerary; thus, the itinerary created is often too long for tourists having limited time for visiting particular sites. Nevertheless, this problem is easily overcome by GoldenHours because this software program makes it possible to generate a personalized schedule taking into consideration how much time the traveler has, his/her preferences, and the speed at which he or she travels.
-
 The traveler simply states his or her destination, amount of time he or she has available between one and four hours, favorite activities like culture, food, nature, shopping, art, or history, and the means of transport. After considering this information, GoldenHours generates a personalized schedule making sure that every destination in the list fits into the time available.
+
 ---
 ## Features
 - Secure user authentication and profile management
