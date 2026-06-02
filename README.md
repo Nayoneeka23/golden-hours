@@ -12,10 +12,19 @@ The traveler simply states his or her destination, amount of time he or she has 
 - Responsive design for desktop and mobile devices
 - Carbon footprint tracking using CodeCarbon
 ---
+## Website Screenshots
+![Home Page](screenshots/homepage.png)
+
+![Trip Planner](screenshots/planner.png)
+
+![Generated Itinerary](screenshots/itinerary.png)
+
+![Map View](screenshots/map-view.png)
+---
 ## Live App
 https://new-proj-ufyw.onrender.com/
 
-GoldenHours is publicly accessible and can be used directly through thedeployed application without any local installation.
+GoldenHours is publicly accessible and can be used directly through the deployed application without any local installation.
 ---
 ## Running locally
 ### Installation
