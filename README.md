@@ -13,13 +13,13 @@ The traveler simply states his or her destination, amount of time he or she has 
 - Carbon footprint tracking using CodeCarbon
 ---
 ## Website Screenshots
-![Home Page](screenshots/homepage.png)
+![Home Page](Screenshots/homepage.png)
 
-![Trip Planner](screenshots/planner.png)
+![Trip Planner](Screenshots/planner.png)
 
-![Generated Itinerary](screenshots/itinerary.png)
+![Generated Itinerary](Screenshots/itinerary.png)
 
-![Map View](screenshots/map-view.png)
+![Map View](Screenshots/map-view.png)
 ---
 ## Live App
 https://new-proj-ufyw.onrender.com/
