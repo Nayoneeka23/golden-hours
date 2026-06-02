@@ -16,11 +16,13 @@ https://new-proj-ufyw.onrender.com/
 GoldenHours is publicly accessible and can be used directly through thedeployed application without any local installation.
 ---
 ## Running locally
-## Installation
+### Installation
 
-Prerequisites
+###Prerequisites
+```bash
 • Node.js (v18 or later)
 • npm
+```
 ---
 ## Clone the Repository
 ```bash
