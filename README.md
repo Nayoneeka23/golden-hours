@@ -22,6 +22,7 @@ The traveler simply states his or her destination, amount of time he or she has 
 ![Map View](Screenshots/map-view.png)
 ---
 ## Live App
+
 https://new-proj-ufyw.onrender.com/
 
 GoldenHours is publicly accessible and can be used directly through the deployed application without any local installation.
@@ -30,7 +31,7 @@ GoldenHours is publicly accessible and can be used directly through the deployed
 ### Installation
 
 ### Prerequisites
-```bash
+```text
 Node.js (v18 or later)
 npm
 ```
@@ -69,6 +70,7 @@ npm run dev
 http://127.0.0.1:5173
 ---
 ## Carbon Emission Measurement
+
 GoldenHours includes sustainability monitoring using CodeCarbon.
 - Run: python measure_carbon.py
 
