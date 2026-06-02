@@ -26,6 +26,7 @@ The traveler simply states his or her destination, amount of time he or she has 
 https://new-proj-ufyw.onrender.com/
 
 GoldenHours is publicly accessible and can be used directly through the deployed application without any local installation.
+
 ---
 ## Running locally
 ### Installation
@@ -75,6 +76,7 @@ GoldenHours includes sustainability monitoring using CodeCarbon.
 - Run: python measure_carbon.py
 
 This script is for tracking application energy consumption and estimates CO₂ emissions generated during executions. Results are stored for analysis and reporting.
+
 ---
 ## Progressive Web App
 GoldenHours supports Progressive Web App functionality:
