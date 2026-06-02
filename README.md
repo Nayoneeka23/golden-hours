@@ -66,9 +66,6 @@ Open a new terminal:
 cd golden-hours
 npm run dev
 ```
-
-## Access the Application
-http://127.0.0.1:5173
 ---
 ## Carbon Emission Measurement
 
