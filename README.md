@@ -14,6 +14,7 @@ The traveler simply states his or her destination, amount of time he or she has 
 ---
 ## Live App
 https://new-proj-ufyw.onrender.com/
+
 GoldenHours is publicly accessible and can be used directly through thedeployed application without any local installation.
 ---
 ## Running locally
@@ -21,8 +22,8 @@ GoldenHours is publicly accessible and can be used directly through thedeployed 
 
 ### Prerequisites
 ```bash
-- Node.js (v18 or later)
-- npm
+Node.js (v18 or later)
+npm
 ```
 ---
 ## Clone the Repository
@@ -60,7 +61,7 @@ http://127.0.0.1:5173
 ---
 ## Carbon Emission Measurement
 GoldenHours includes sustainability monitoring using CodeCarbon.
-Run: python measure_carbon.py
+- Run: python measure_carbon.py
 
 This script is for tracking application energy consumption and estimates CO₂ emissions generated during executions. Results are stored for analysis and reporting.
 ---
